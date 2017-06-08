@@ -740,6 +740,9 @@ given is that of a group to which the current user belongs."
 (defun timeval->microseconds (tv)
     (+ (* 1000000 (timeval-ref tv :timeval.tv_sec)) (timeval-ref tv :timeval.tv_usec)))
 
+(defun timeval->nanoseconds (tv)
+    (+ (* 1000000000 (timeval-ref tv :timeval.tv_sec)) (* 1000 (timeval-ref tv :timeval.tv_usec))))
+
 (defun %add-timevals (result a b)
   (let* ((seconds (+ (timeval-ref a :timeval.tv_sec) (timeval-ref b :timeval.tv_sec)))
 	 (micros (+ (timeval-ref a :timeval.tv_usec) (timeval-ref b :timeval.tv_usec))))

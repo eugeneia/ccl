@@ -447,19 +447,12 @@ are running on, or NIL if we can't find any useful information."
                                   minor-page-faults major-page-faults
                                   swaps)
   (let* ((s *trace-output*)
-         (units
-          (ecase internal-time-units-per-second
-            (1000000 "microseconds")
-            (1000  "milliseconds")))
+         (units "nanoseconds") ; internal-time-units-per-second
          (iwidth (max (length (format nil "~:D" elapsed-time))
                           (length (format nil "~:D" user-time))
                           (length (format nil "~:D" system-time))
                           (length (format nil "~:D" gc-time))))
-                      
-         (fwidth
-          (ecase internal-time-units-per-second
-            (1000000 6)
-            (1000  3)))
+         (fwidth 9) ; internal-time-units-per-second
          (elapsed-seconds (/ elapsed-time internal-time-units-per-second))
          (user-seconds (/ user-time internal-time-units-per-second))
          (system-seconds (/ system-time internal-time-units-per-second))

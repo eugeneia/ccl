@@ -7,10 +7,8 @@
  long, and cover the interval (-1152921504606846976, 1152921504606846975)
  (see {section Tagging scheme}).
 
- Because  64-bit systems have large fixnums,
- {variable internal-time-units-per-second} is 1000000 on 64-bit
- systems. It remains 1000 on 32-bit systems.  This enables much finer
- grained timing on 64-bit systems."
+ Internal time is represented in nanoseconds, and
+ {variable internal-time-units-per-second} is 1000000000."
 
 
 ) ;chapter

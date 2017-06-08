@@ -31,10 +31,7 @@
   (let* ((timeval-size (record-length :timeval)))
     (%stack-block ((copy (* timeval-size 5)))
       (#_memmove copy *total-gc-microseconds* (* timeval-size 5))
-      (macrolet ((funk (arg)
-                   (ecase internal-time-units-per-second 
-                    (1000000 `(timeval->microseconds ,arg))
-                    (1000 `(timeval->milliseconds ,arg)))))
+      (macrolet ((funk (arg) `(timeval->nanoseconds ,arg))) ; internal-time-units-per-second
         (values
          (funk copy)
          (funk (%incf-ptr copy timeval-size))
@@ -259,9 +256,9 @@
            (user-micros (pref usage :rusage.ru_utime.tv_usec))
            (system-micros (pref usage :rusage.ru_stime.tv_usec)))
       (values (+ (* user-seconds internal-time-units-per-second)
-                 (round user-micros (floor 1000000 internal-time-units-per-second)))
+                 (* user-micros (floor internal-time-units-per-second 1000000)))
               (+ (* system-seconds internal-time-units-per-second)
-                 (round system-micros (floor 1000000 internal-time-units-per-second))))))
+                 (* system-micros (floor internal-time-units-per-second 1000000))))))
   #+windows-target
   (rlet ((start #>FILETIME)
          (end #>FILETIME)
@@ -274,8 +271,8 @@
            (kernel-100ns (dpb (pref kernel #>FILETIME.dwHighDateTime)
                             (byte 32 32)
                             (pref kernel #>FILETIME.dwLowDateTime)))
-           (convert (floor 10000000 internal-time-units-per-second)))
-      (values (floor user-100ns convert) (floor kernel-100ns convert)))))
+           (convert (floor internal-time-units-per-second 10000000)))
+      (values (* user-100ns convert) (* kernel-100ns convert)))))
 
 (defun get-internal-run-time ()
   "Return the run time in the internal time format. (See

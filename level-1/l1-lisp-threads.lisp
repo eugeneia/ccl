@@ -42,9 +42,6 @@
 (defloadvar *ns-per-tick*
     (floor *ns-per-second* *ticks-per-second*))
 
-(defloadvar *ns-per-internal-time-unit*
-    (floor *ns-per-second* internal-time-units-per-second))
-
 #-windows-target
 (defun %nanosleep (seconds nanoseconds)
   #+(and darwin-target 64-bit-target)
@@ -99,7 +96,8 @@
       (floor (pref timebase-info :mach_timebase_info_data_t.numer)
              (pref timebase-info :mach_timebase_info_data_t.denom))))
 
-(defun current-time-in-nanoseconds ()
+(declaim (inline %current-time-in-nanoseconds))
+(defun %current-time-in-nanoseconds ()
   #-(or darwin-target windows-target)
   (rlet ((ts :timespec))
     (#_clock_gettime preferred-posix-clock-id ts)
@@ -110,15 +108,16 @@
   #+windows-target
   (* (#_GetTickCount64) *ns-per-millisecond*))
 
+(defun current-time-in-nanoseconds ()
+  (%current-time-in-nanoseconds))
+
 (defun get-internal-real-time ()
   "Return the real time in the internal time format. (See
   INTERNAL-TIME-UNITS-PER-SECOND.) This is useful for finding elapsed time."
-  (values (truncate (current-time-in-nanoseconds)
-                    *ns-per-internal-time-unit*)))
+  (%current-time-in-nanoseconds))
 
 (defun get-tick-count ()
-  (values (truncate (current-time-in-nanoseconds)
-                    *ns-per-tick*)))
+  (values (truncate (%current-time-in-nanoseconds) *ns-per-tick*)))
 
 
 
