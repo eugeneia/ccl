@@ -656,6 +656,41 @@
 (defsetf symbol-plist set-symbol-plist)
 (defsetf fill-pointer set-fill-pointer)
 
+
+;;; Serializing macro argument lists: because packages that existed during
+;;; compile time might not be present at run time, ...
+
+(defun macro-arglist->string (normalized-lambda-list)
+  (let ((temp nil))
+    (dolist (arg normalized-lambda-list)
+      (if (eq arg '&aux)
+          (return)
+          (push (if (neq (symbol-package arg) (find-package "KEYWORD"))
+                    (make-symbol (symbol-name arg))
+                    arg)
+                temp)))
+    (format nil "~:a" (nreverse temp))))
+
+(defun string->macro-arglist (string &aux res)
+  (with-input-from-string (stream string)
+    (setq res nil)
+    (let ((eof (list nil))
+          val errorp)
+      (declare (dynamic-extent eof))
+      (loop
+         (multiple-value-setq (val errorp)
+           (ignore-errors (values (read stream nil eof))))
+         (when errorp
+           (push '&rest res)
+           (push ':unparseable res)
+           (return))
+         (when (eq val eof)
+           (return))
+         (push val res))))
+  (if (and (null (cdr res)) (listp (car res)))
+      (car res)
+      (nreverse res)))
+
 ; This sux; it calls the compiler twice (once to shove the macro in the
 ; environment, once to dump it into the file.)
 (defmacro defmacro  (name arglist &body body &environment env)
@@ -664,13 +699,7 @@
   (multiple-value-bind (lambda-form doc)
                        (parse-macro-1 name arglist body env)
     (let* ((normalized (normalize-lambda-list arglist t t))
-           (body-pos (position '&body normalized))
-           (argstring (let ((temp nil))
-                        (dolist (arg normalized)
-                          (if (eq arg '&aux)
-                            (return)
-                            (push arg temp)))
-                        (format nil "~:a" (nreverse temp)))))
+           (body-pos (position '&body normalized)))
       (if (and body-pos (memq '&optional normalized)) (decf body-pos))
       `(progn
          (eval-when (:compile-toplevel)
@@ -678,7 +707,7 @@
          (eval-when (:load-toplevel :execute)
            (%macro 
             (nfunction ,name ,lambda-form)
-            '(,doc ,body-pos . ,argstring))
+            '(,doc ,body-pos . ,(macro-arglist->string normalized))
            ',name)))))
 
 (defmacro define-symbol-macro (name expansion &environment env)
