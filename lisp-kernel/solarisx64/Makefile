@@ -26,7 +26,8 @@ M4 = gm4
 CC = gcc
 ASFLAGS = --64 --divide
 M4FLAGS = -DSOLARIS -DX86 -DX8664
-CDEFINES = -DSOLARIS -D_REENTRANT -DX86 -DX8664 -D__EXTENSIONS__ -DHAVE_TLS -DSVN_REVISION=$(SVN_REVISION) #-DDISABLE_EGC
+CDEFINES = -DSOLARIS -D_REENTRANT -DX86 -DX8664 -D__EXTENSIONS__ -DHAVE_TLS -DSVN_REVISION=$(SVN_REVISION) \
+	   -DUSE_DTRACE
 CDEBUG = -g
 COPT = #-O2
 # Once in a while, -Wformat says something useful.  The odds are against that,
@@ -49,7 +50,7 @@ COBJ  = pmcl-kernel.o gc-common.o x86-gc.o bits.o  x86-exceptions.o \
 	image.o thread_manager.o lisp-debug.o memory.o unix-calls.o
 
 DEBUGOBJ = lispdcmd.o plprint.o plsym.o xlbt.o x86_print.o
-KERNELOBJ= $(COBJ) x86-asmutils64.o  imports.o
+KERNELOBJ= $(COBJ) x86-asmutils64.o  imports.o probes.o
 
 SPINC =	lisp.s m4macros.m4 x86-constants.s x86-macros.s errors.s x86-uuo.s \
 	x86-constants64.s lisp_globals.s
@@ -74,12 +75,16 @@ OSLIBS = -ldl -lm -lpthread -lsocket -lnsl -lrt
 
 $(SPOBJ): $(SPINC)
 $(ASMOBJ): $(SPINC)
-$(COBJ): $(CHEADERS)
+$(COBJ): $(CHEADERS) probes.h
 $(DEBUGOBJ): $(CHEADERS) lispdcmd.h
 
+probes.h: probes.d
+	dtrace -h -s $<
+probes.o: probes.h
+	dtrace -G -s $< $(COBJ)
 
 cclean:
-	$(RM) -f $(KERNELOBJ) $(DEBUGOBJ) ../../sx86cl64
+	$(RM) -f $(KERNELOBJ) $(DEBUGOBJ) ../../sx86cl64 probes.h
 
 clean:	cclean
 	$(RM) -f $(SPOBJ)
