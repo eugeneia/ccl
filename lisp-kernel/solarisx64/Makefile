@@ -40,7 +40,7 @@ PLATFORM_H = platform-solarisx64.h
 .s.o:
 	$(M4) $(M4FLAGS) -I../ $< | $(AS)  $(ASFLAGS) -o $@
 .c.o:
-	$(CC) -include ../$(PLATFORM_H) -c $< $(CDEFINES) $(CDEBUG) $(COPT) $(WFORMAT) -m64 -o $@
+	$(CC) -include ../$(PLATFORM_H) -c $< $(CDEFINES) $(CDEBUG) $(COPT) $(WFORMAT) -I. -m64 -o $@
 
 SPOBJ = pad.o x86-spjump64.o x86-spentry64.o x86-subprims64.o
 ASMOBJ = x86-asmutils64.o imports.o
@@ -80,8 +80,8 @@ $(DEBUGOBJ): $(CHEADERS) lispdcmd.h
 
 probes.h: probes.d
 	dtrace -h -s $<
-probes.o: probes.h
-	dtrace -G -s $< $(COBJ)
+probes.o: probes.d $(COBJ)
+	dtrace -G -s $^
 
 sx86cl64ustack.o: sx86cl64ustack.d
 	dtrace -G -s $<

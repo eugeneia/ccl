@@ -17,3 +17,7 @@
 #define SIGNAL_FOR_PROCESS_INTERRUPT SIGUSR1
 #define SIG_SUSPEND_THREAD SIGUSR2
 #define SIG_KILL_THREAD SIGRTMIN
+
+#ifdef USE_DTRACE
+#include "probes.h"
+#endif
