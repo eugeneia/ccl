@@ -50,7 +50,7 @@ COBJ  = pmcl-kernel.o gc-common.o x86-gc.o bits.o  x86-exceptions.o \
 	image.o thread_manager.o lisp-debug.o memory.o unix-calls.o
 
 DEBUGOBJ = lispdcmd.o plprint.o plsym.o xlbt.o x86_print.o
-KERNELOBJ= $(COBJ) x86-asmutils64.o  imports.o probes.o
+KERNELOBJ= $(COBJ) x86-asmutils64.o  imports.o probes.o sx86cl64ustack.o
 
 SPINC =	lisp.s m4macros.m4 x86-constants.s x86-macros.s errors.s x86-uuo.s \
 	x86-constants64.s lisp_globals.s
@@ -82,6 +82,9 @@ probes.h: probes.d
 	dtrace -h -s $<
 probes.o: probes.h
 	dtrace -G -s $< $(COBJ)
+
+sx86cl64ustack.o: sx86cl64ustack.d
+	dtrace -G -s $<
 
 cclean:
 	$(RM) -f $(KERNELOBJ) $(DEBUGOBJ) ../../sx86cl64 probes.h
