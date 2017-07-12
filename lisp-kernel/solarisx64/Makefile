@@ -84,7 +84,7 @@ probes.o: probes.d $(COBJ)
 	dtrace -G -s $^
 
 sx86cl64ustack.o: sx86cl64ustack.d
-	dtrace -G -s $<
+	dtrace -64 -C -G -s $<
 
 cclean:
 	$(RM) -f $(KERNELOBJ) $(DEBUGOBJ) ../../sx86cl64 probes.h

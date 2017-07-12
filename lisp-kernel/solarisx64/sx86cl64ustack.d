@@ -2,7 +2,7 @@
 #define r_fn uregs[R_R13]
 #define word unsigned long
 
-#defmacro PHASE(p) (this->phase == (p))
+#define PHASE(p) (this->phase == (p))
 
 #define START 0
 #define LOOP 1
@@ -21,7 +21,7 @@
 #define RECOVER_FN_FROM_RIP_WORD0 0x8d4c /* 0x4c 0x8d, little-endian */
 #define RECOVER_FN_FROM_RIP_BYTE2 0x2d  /* third byte of opcode */
 
-#define TRA_P(r) (r & TRA_TAGMASK == TRA_TAG && \
+#define TRA_P(r) ((r & TRA_TAGMASK) == TRA_TAG && \
                   *(short *)r == RECOVER_FN_FROM_RIP_WORD0 && \
                   *(char *)(r+2) == RECOVER_FN_FROM_RIP_BYTE2)
 
@@ -46,43 +46,34 @@
 
 #define SYMNAME(s) (UVREF(s, 1) & PTRMASK)
 
-dtrace:helper:ustack:
-{
-        this->phase = START;
-        this->hint = TRA_P(r_rip) ? *(word *)(rip+TRA_FNOFFSET(r_rip)) : r_fn;
-        this->fn = TAG(this->hint) == 0xF ? this->hint & PTRMASK : 0;
-        this->name = this->fn && LFSYMP(this->fn) ? SYMNAME(LFSYM(this->fn)) : 0;
+dtrace:helper:ustack: {
+    this->phase = START;
+    this->hint = TRA_P(r_rip) ? *(word *)(r_rip+TRA_FNOFFSET(r_rip)) : r_fn;
+    this->fn = TAG(this->hint) == 0xF ? this->hint & PTRMASK : 0;
+    this->name = this->fn && LFSYMP(this->fn) ? SYMNAME(LFSYM(this->fn)) : 0;
+}
+
+dtrace:helper:ustack: /PHASE(START) && this->name/ {
+    this->len = UVSIZE(this->name);
+    this->buf = (char *)alloca(this->len+1);
+    this->off = 0;
+    this->phase = LOOP;
+}
+
+dtrace:helper:ustack: /PHASE(START) && !this->name/ {
+    this->phase = DONE;
+    "@ccl/unknown";
 }
 
 #define APPEND_CHR(c) (this->buf[this->off++] = (c))
 
-dtrace:helper:ustack:
-/PHASE(START) && this->name > 0/
-{
-        this->len = UVSIZE(this->name);
-        this->buf = (char *)alloca(len+1);
-        this->off = 0;
-        this->phase = LOOP;
+dtrace:helper:ustack: /PHASE(LOOP)/ {
+    APPEND_CHR((char)(UVREF(this->name, this->off+1) & 0x7F));
+    this->phase = this->off < this->len ? LOOP : END;
 }
 
-dtrace:helper:ustack:
-/PHASE(START) && this->name == 0/
-{
-        this->phase = DONE;
-        "@ccl/unknown";
-}
-
-dtrace:helper:ustack:
-/PHASE(LOOP)/
-{
-        APPEND_CHR((char)(UVREF(this->name, this->off+1) & 0x7F);
-        this->phase = this->off < this->len ? LOOP : END;
-}
-
-dtrace:helper:ustack:
-/PHASE(END)/
-{
-        this->phase = DONE;
-        APPEND_CHR('\0');
-        stringof(this->buf);
+dtrace:helper:ustack: /PHASE(END)/ {
+    this->phase = DONE;
+    APPEND_CHR('\0');
+    (string)this->buf;
 }
