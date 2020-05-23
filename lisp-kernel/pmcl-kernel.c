@@ -1902,7 +1902,7 @@ main
     setvbuf(dbgout, NULL, _IONBF, 0);
     init_winsock();
     init_windows_io();
-    reserve_tls_slots();
+    //reserve_tls_slots();
     utf_16_argv = CommandLineToArgvW(GetCommandLineW(),&wide_argc);
   }
 #endif
