@@ -29,9 +29,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifndef WIN_32
-#define _dosmaperr mingw_dosmaperr
-#else
 void
 _dosmaperr(unsigned long oserrno)
 {
@@ -176,8 +173,6 @@ _dosmaperr(unsigned long oserrno)
     break;
   }
 }
-    
-#endif
 
 #define MAX_FD 32
 
