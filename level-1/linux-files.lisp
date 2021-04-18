@@ -1845,6 +1845,7 @@ space, and prefixed with PREFIX."
                (quote-backslash 0)
                (literal-backslash 0))
           (declare (fixnum n quote-backslash literal-backslash))
+          (write-char #\" out)
           (dotimes (i n)
             (let* ((c (schar string i)))
               (case c
@@ -1869,14 +1870,11 @@ space, and prefixed with PREFIX."
                    (progn
                      (write-char #\\ out)
                      (decf literal-backslash))))
-                ((#\space #\tab)
-                 (write-char #\" out)
-                 (write-char c out)
-                 (write-char #\" out))
                 (#\"
                  (write-char #\\ out)
                  (write-char #\" out))
                 (t (write-char c out)))))
+          (write-char #\" out)
           (when (cdr strings) (write-char #\space out))))))
 
   (defun create-windows-process (new-in new-out new-err cmdstring env)
